@@ -103,6 +103,7 @@ program
                 console.log('   2. 按 Ctrl+A (Mac: Cmd+A) 全选')
                 console.log('   3. 按 Ctrl+C (Mac: Cmd+C) 复制')
                 console.log('   4. 粘贴到微信公众号编辑器')
+                process.exit(0)
             } else {
                 console.log('')
                 console.log('⚠️  未生成微信正式版 HTML (因图片上传失败或配置缺失)')
