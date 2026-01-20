@@ -52,6 +52,18 @@ program
                 localHtml = processResult.localHtml
             } else {
                 console.log('⏭️  跳过表格转图片 (--no-table-image)')
+                // 即使跳过表格转图片，我们也需要 localHtml 有值以便后续生成预览
+                localHtml = result.html
+            }
+
+            // 3.5 处理普通本地图片上传 (New Feature)
+            if (wechatHtml) {
+                const { processImagesInHtml } = await import('./image-processor.js')
+                wechatHtml = await processImagesInHtml(wechatHtml, config, file)
+            } else if (!localHtml) {
+                // 如果既没有 wechatHtml 也没 localHtml (tableImage failed severely?)
+                // Usually processTablesInHtml guarantees localHtml unless catastrophic
+                localHtml = result.html
             }
 
             // 4. 生成完整 HTML 并写入文件

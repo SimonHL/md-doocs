@@ -7,6 +7,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 import FormData from 'form-data'
+import fetch from 'node-fetch'
 
 interface WechatConfig {
     appID: string
