@@ -68,6 +68,7 @@ export async function screenshotTable(
   const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage({
     viewport: { width: viewportWidth, height: 800 },
+    deviceScaleFactor: 3,
   })
 
   // 加载 HTML

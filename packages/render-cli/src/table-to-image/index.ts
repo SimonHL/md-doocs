@@ -90,14 +90,14 @@ export async function processTablesInHtml(
             const relativePath = path.join(relativeDir, filename)
 
             // 3.2 替换本地 HTML 中的表格
-            const localImgTag = `<figure><img src="${relativePath}" alt="表格" style="max-width:100%;"/></figure>`
+            const localImgTag = `<figure><img src="${relativePath}" alt="表格" style="display:block; width:100%; margin: 1em auto;"/></figure>`
             table.replaceWith(localImgTag)
 
             // 3.3 如果可以上传，则上传并替换微信 HTML
             if (canUpload) {
                 try {
                     const imageUrl = await uploadToWechat(imagePath, wechat)
-                    const wechatImgTag = `<figure><img src="${imageUrl}" alt="表格" style="max-width:100%;"/></figure>`
+                    const wechatImgTag = `<figure><img src="${imageUrl}" alt="表格" style="display:block; width:100%; margin: 1em auto;"/></figure>`
                     wechatTable.replaceWith(wechatImgTag)
 
                     console.log(`  ✅ 表格 ${i + 1} 处理完成 (本地+上传)`)
