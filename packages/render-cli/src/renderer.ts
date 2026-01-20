@@ -1,13 +1,15 @@
 /**
  * Markdown 渲染器
- * 使用 marked 直接渲染，集成 highlight.js 进行代码高亮
+ * 使用 @md/core 进行渲染，确保与 Web 端一致
  */
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { marked } from 'marked'
-import hljs from 'highlight.js'
+
+import { initRenderer } from '@md/core/renderer'
+import { modifyHtmlContent } from '@md/core/utils'
+import type { IOpts } from '@md/shared/types'
 
 import type { RenderConfig } from './types.js'
 
@@ -98,37 +100,6 @@ function wrapCSSWithScope(css: string, scope: string): string {
 }
 
 /**
- * 配置 marked 渲染器，集成 highlight.js
- */
-function setupMarkedRenderer(config: RenderConfig) {
-    const renderer = {
-        code({ text, lang }: { text: string; lang?: string }) {
-            // 默认使用 plaintext
-            const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
-
-            let highlighted = ''
-            try {
-                highlighted = hljs.highlight(text, { language }).value
-            } catch {
-                highlighted = text
-            }
-
-            // 强制添加 hljs 类，确保 github-dark 主题生效
-            // 同时添加 language-xxx 类
-            const macStyleClass = config.codeBlock.macStyle ? ' mac-style' : ''
-            return `<pre class="${macStyleClass}"><code class="hljs language-${language}">${highlighted}</code></pre>\n`
-        }
-    }
-
-    marked.use({ renderer })
-
-    marked.setOptions({
-        breaks: true,
-        gfm: true,
-    })
-}
-
-/**
  * 渲染结果类型
  */
 export interface RenderResult {
@@ -141,12 +112,23 @@ export interface RenderResult {
  * 渲染 Markdown 并返回结构化结果
  */
 export async function renderMarkdownToResult(mdFilePath: string, config: RenderConfig): Promise<RenderResult> {
-    setupMarkedRenderer(config)
-
     const absolutePath = path.resolve(mdFilePath)
     const mdContent = fs.readFileSync(absolutePath, 'utf-8')
 
-    // 1. 准备所有 CSS (提前到 HTML 处理前，以便提取样式用于内联)
+    // 1. 初始化渲染器
+    const opts: IOpts = {
+        legend: config.options.legend,
+        citeStatus: config.options.citeStatus,
+        countStatus: config.options.countStatus,
+        isMacCodeBlock: config.codeBlock.macStyle,
+        isShowLineNumber: config.codeBlock.showLineNumber,
+        themeMode: config.codeBlock.theme === 'github-dark' ? 'dark' : 'light',
+    }
+    
+    // 初始化渲染器
+    const renderer = initRenderer(opts)
+
+    // 2. 准备所有 CSS (提前到 HTML 处理前，以便提取样式用于内联)
     const themeCSS = loadThemeCSS(config.theme.name)
     const variableCSS = generateCSSVariables(config)
     const customCSS = config.customCSS || ''
@@ -154,55 +136,23 @@ export async function renderMarkdownToResult(mdFilePath: string, config: RenderC
     const fullCSS = `${variableCSS}\n${themeCSS}\n${customCSS}`
     const scopedCSS = wrapCSSWithScope(fullCSS, '.container')
 
-    const rawHtml = await marked.parse(mdContent)
+    // 3. 渲染 content
+    // modifyHtmlContent 会处理 front-matter, marked parse, sanitize, postProcess
+    const bodyHtml = modifyHtmlContent(mdContent, renderer)
 
-    // 不再使用 Cheerio 进行样式内联，恢复纯净的 HTML 输出
-    // 这将解决因样式提取不准确导致的 "灰色引用块" 和 "行内代码变块级" 等 UI 回归问题
-
-    // 将 HTML 包裹在容器内，以便应用 .container 作用域的 CSS
-    const bodyHtml = `<section class="container">${rawHtml}</section>`
-
-    let macStyleCSS = ''
-    if (config.codeBlock.macStyle) {
-        macStyleCSS = `
-    .container pre.mac-style {
-      position: relative;
-      padding-top: 34px !important;
-      border-radius: 8px;
-      background: #282c32 !important; /* 深色背景，与 github-dark 类似 */
-      margin: 15px 0;
-      overflow: hidden;
-    }
-    .container pre.mac-style::before {
-      content: "";
-      position: absolute;
-      top: 11px;
-      left: 12px;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #ff5f56;
-      box-shadow: 18px 0 0 #ffbd2e, 36px 0 0 #27c93f;
-      z-index: 10;
-    }
-    .container pre.mac-style code {
-      padding: 0 15px 15px !important;
-      background: transparent !important;
-      display: block;
-    }
-    `
-    }
-
-    const additionCSS = `
-    ${macStyleCSS}
-    .container pre {
-        margin: 10px 0;
-        padding: 0;
-    }
+    // 4. Addition CSS
+    // core 已经在 postProcessHtml 中添加了部分样式 (如 .hljs.code__pre > .mac-sign)
+    // 这里我们添加 render-cli 特有的样式修复，沿用之前的 fix
     
+    const additionCSS = `
     /* 修复表格边框合并问题 */
     .container table {
         border-collapse: collapse;
+    }
+    /* 覆盖可能的 reset 样式 */
+    .container pre {
+        margin: 10px 0;
+        padding: 0;
     }
   `
 
