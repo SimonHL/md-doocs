@@ -1,0 +1,45 @@
+# md-doocs 渲染配置文件
+# 复制此文件为 md-config.yaml 并填入你的配置
+
+# 图床设置（默认使用微信公众号图床）
+imageHost: mp
+
+# 微信公众号图床配置
+wechat:
+  appID: ""          # 填入你的 AppID
+  appSecret: ""      # 填入你的 AppSecret
+  proxyOrigin: ""    # 可选：代理域名
+
+# 主题样式设置
+theme:
+  # 可选: default, grace, simple
+  name: default
+  # 主色调
+  primaryColor: "#0F4C81"
+  # 字体
+  fontFamily: "-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB, Microsoft YaHei UI, Microsoft YaHei, Arial, sans-serif"
+  # 字号
+  fontSize: "16px"
+
+# 代码块设置
+codeBlock:
+  # 代码高亮主题（如 github, atom-one-dark 等）
+  theme: "github"
+  # 是否显示 Mac 风格标题栏
+  macStyle: true
+  # 是否显示行号
+  showLineNumber: false
+
+# 其他设置
+options:
+  # 是否启用外链脚注
+  citeStatus: false
+  # 是否显示字数统计
+  countStatus: false
+  # 图注格式: title-alt, alt-title, title, alt, none
+  legend: "alt"
+
+# 自定义 CSS（可选）
+# 使用 | 语法支持多行
+customCSS: |
+  /* 在这里添加自定义 CSS */

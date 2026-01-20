@@ -43,6 +43,7 @@
     "prettier": "2.8.8",
     "shx": "^0.4.0",
     "simple-git-hooks": "^2.13.1",
+    "tsx": "catalog:",
     "typescript": "~5.9.3"
   },
   "simple-git-hooks": {
