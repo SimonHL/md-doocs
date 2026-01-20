@@ -11,6 +11,7 @@ import { loadConfig } from './config.js'
 import { renderMarkdownToResult } from './renderer.js'
 import { generateFullHTML, writeOutput, getDefaultOutputPath } from './output.js'
 import { processTablesInHtml } from './table-to-image/index.js'
+import { generateOnlineMarkdown, writeOnlineMarkdown } from './online-md.js'
 
 const program = new Command()
 
@@ -33,6 +34,11 @@ program
 
             // 1. 加载配置
             const config = await loadConfig(options.config, file)
+
+            // 1.5 生成在线 Markdown (-online.md)
+            console.log('📝 生成在线 Markdown...')
+            const onlineMd = await generateOnlineMarkdown(file, config)
+            await writeOnlineMarkdown(onlineMd, file)
 
             // 2. 渲染 Markdown
             console.log('📝 渲染 Markdown...')

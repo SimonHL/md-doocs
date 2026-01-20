@@ -100,7 +100,7 @@ function wrapCSSWithScope(css: string, scope: string): string {
 /**
  * 配置 marked 渲染器，集成 highlight.js
  */
-function setupMarkedRenderer() {
+function setupMarkedRenderer(config: RenderConfig) {
     const renderer = {
         code({ text, lang }: { text: string; lang?: string }) {
             // 默认使用 plaintext
@@ -115,7 +115,8 @@ function setupMarkedRenderer() {
 
             // 强制添加 hljs 类，确保 github-dark 主题生效
             // 同时添加 language-xxx 类
-            return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>\n`
+            const macStyleClass = config.codeBlock.macStyle ? ' mac-style' : ''
+            return `<pre class="${macStyleClass}"><code class="hljs language-${language}">${highlighted}</code></pre>\n`
         }
     }
 
@@ -140,7 +141,7 @@ export interface RenderResult {
  * 渲染 Markdown 并返回结构化结果
  */
 export async function renderMarkdownToResult(mdFilePath: string, config: RenderConfig): Promise<RenderResult> {
-    setupMarkedRenderer()
+    setupMarkedRenderer(config)
 
     const absolutePath = path.resolve(mdFilePath)
     const mdContent = fs.readFileSync(absolutePath, 'utf-8')
@@ -161,23 +162,41 @@ export async function renderMarkdownToResult(mdFilePath: string, config: RenderC
     // 将 HTML 包裹在容器内，以便应用 .container 作用域的 CSS
     const bodyHtml = `<section class="container">${rawHtml}</section>`
 
-    const additionCSS = `
-    .container pre::before {
-      position: absolute;
-      top: 0;
-      right: 0;
-      color: #ccc;
-      text-align: center;
-      font-size: 0.8em;
-      padding: 5px 10px 0;
-      line-height: 15px;
-      height: 15px;
-      font-weight: 600;
-      content: '●●●';
+    let macStyleCSS = ''
+    if (config.codeBlock.macStyle) {
+        macStyleCSS = `
+    .container pre.mac-style {
+      position: relative;
+      padding-top: 34px !important;
+      border-radius: 8px;
+      background: #282c32 !important; /* 深色背景，与 github-dark 类似 */
+      margin: 15px 0;
+      overflow: hidden;
     }
+    .container pre.mac-style::before {
+      content: "";
+      position: absolute;
+      top: 11px;
+      left: 12px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff5f56;
+      box-shadow: 18px 0 0 #ffbd2e, 36px 0 0 #27c93f;
+      z-index: 10;
+    }
+    .container pre.mac-style code {
+      padding: 0 15px 15px !important;
+      background: transparent !important;
+      display: block;
+    }
+    `
+    }
+
+    const additionCSS = `
+    ${macStyleCSS}
     .container pre {
-        background: transparent; /* 容器透明，让内部 code.hljs 的背景显示 */
-        margin: 0;
+        margin: 10px 0;
         padding: 0;
     }
     
