@@ -44,22 +44,35 @@ program
             console.log('📝 渲染 Markdown...')
             const result = await renderMarkdownToResult(file, config)
 
+            // 2.5 处理图表 (Mermaid, PlantUML)
+            let processedHtml = result.html
+            let mermaidSvgs: string[] = []
+
+            // 2.5.1 渲染 Mermaid 图表 (准备阶段)
+            const { prepareMermaidData, injectMermaidSvgs, processPlantUMLDiagrams } = await import('./diagram-renderer.js')
+            const mermaidData = await prepareMermaidData(processedHtml, result.rawMarkdown)
+            processedHtml = mermaidData.html
+            mermaidSvgs = mermaidData.svgs
+
+            // 2.5.2 处理 PlantUML 图表
+            processedHtml = await processPlantUMLDiagrams(processedHtml)
+
             // 3. 处理表格转图片
-            let wechatHtml: string | null = result.html
+            let wechatHtml: string | null = processedHtml
             let localHtml: string | null = null
 
             if (options.tableImage !== false) {
                 console.log('🖼️  处理表格转图片...')
                 const mergedCSS = `${result.css}\n${result.addition}`
 
-                const processResult = await processTablesInHtml(result.html, mergedCSS, config, file)
+                const processResult = await processTablesInHtml(processedHtml, mergedCSS, config, file)
 
                 wechatHtml = processResult.wechatHtml
                 localHtml = processResult.localHtml
             } else {
                 console.log('⏭️  跳过表格转图片 (--no-table-image)')
                 // 即使跳过表格转图片，我们也需要 localHtml 有值以便后续生成预览
-                localHtml = result.html
+                localHtml = processedHtml
             }
 
             // 3.5 处理普通本地图片上传 (New Feature)
@@ -76,10 +89,13 @@ program
 
             // 4.1 写入本地预览版 (如果有)
             if (localHtml) {
-                const previewHtml = generateFullHTML({
+                let previewHtml = generateFullHTML({
                     ...result,
                     html: localHtml,
                 }, config.codeBlock.theme)
+
+                // 注入 Mermaid SVG
+                previewHtml = injectMermaidSvgs(previewHtml, mermaidSvgs)
 
                 // 自动生成 preview 文件名: filename.preview.html
                 const parsed = path.parse(file)
@@ -94,10 +110,13 @@ program
 
             // 4.2 写入微信正式版 (如果有)
             if (wechatHtml) {
-                const fullHtml = generateFullHTML({
+                let fullHtml = generateFullHTML({
                     ...result,
                     html: wechatHtml,
                 }, config.codeBlock.theme)
+
+                // 注入 Mermaid SVG
+                fullHtml = injectMermaidSvgs(fullHtml, mermaidSvgs)
 
                 const outputPath = options.output || getDefaultOutputPath(file)
                 await writeOutput(fullHtml, outputPath)

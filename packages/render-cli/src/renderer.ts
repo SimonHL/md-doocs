@@ -106,6 +106,7 @@ export interface RenderResult {
     html: string
     css: string
     addition: string
+    rawMarkdown: string
 }
 
 /**
@@ -113,7 +114,7 @@ export interface RenderResult {
  */
 export async function renderMarkdownToResult(mdFilePath: string, config: RenderConfig): Promise<RenderResult> {
     const absolutePath = path.resolve(mdFilePath)
-    const mdContent = fs.readFileSync(absolutePath, 'utf-8')
+    const rawMdContent = fs.readFileSync(absolutePath, 'utf-8')
 
     // 1. 初始化渲染器
     const opts: IOpts = {
@@ -124,7 +125,7 @@ export async function renderMarkdownToResult(mdFilePath: string, config: RenderC
         isShowLineNumber: config.codeBlock.showLineNumber,
         themeMode: config.codeBlock.theme === 'github-dark' ? 'dark' : 'light',
     }
-    
+
     // 初始化渲染器
     const renderer = initRenderer(opts)
 
@@ -138,12 +139,82 @@ export async function renderMarkdownToResult(mdFilePath: string, config: RenderC
 
     // 3. 渲染 content
     // modifyHtmlContent 会处理 front-matter, marked parse, sanitize, postProcess
-    const bodyHtml = modifyHtmlContent(mdContent, renderer)
+    const bodyHtml = modifyHtmlContent(rawMdContent, renderer)
 
     // 4. Addition CSS
     // core 已经在 postProcessHtml 中添加了部分样式 (如 .hljs.code__pre > .mac-sign)
     // 这里我们添加 render-cli 特有的样式修复，沿用之前的 fix
+
+    // GFM Alert Styles
+    // Use blockquote.markdown-alert to increase specificity over theme's blockquote
+    const alertCSS = `
+    blockquote.markdown-alert {
+        padding: 8px 16px !important;
+        margin-bottom: 16px !important;
+        border: 1px solid !important;
+        border-radius: 6px !important;
+        background-color: #ffffff !important;
+        box-shadow: none !important;
+    }
+    .markdown-alert-title {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        line-height: 1.5;
+    }
+    .markdown-alert-title svg {
+        margin-right: 8px !important;
+        fill: currentColor;
+    }
     
+    /* Note */
+    blockquote.markdown-alert-note { 
+        border-color: #0969da !important; 
+        background-color: #e6f2ff !important; 
+        color: #24292f; 
+    }
+    .alert-title-note { color: #0969da !important; }
+    .alert-icon-note { fill: #0969da !important; }
+
+    /* Tip */
+    blockquote.markdown-alert-tip { 
+        border-color: #1f883d !important; 
+        background-color: #e6ffec !important; 
+        color: #24292f; 
+    }
+    .alert-title-tip { color: #1f883d !important; }
+    .alert-icon-tip { fill: #1f883d !important; }
+
+    /* Important */
+    blockquote.markdown-alert-important { 
+        border-color: #8250df !important; 
+        background-color: #f6f0ff !important; 
+        color: #24292f; 
+    }
+    .alert-title-important { color: #8250df !important; }
+    .alert-icon-important { fill: #8250df !important; }
+
+    /* Warning */
+    blockquote.markdown-alert-warning { 
+        border-color: #9a6700 !important; 
+        background-color: #fff8c5 !important; 
+        color: #24292f; 
+    }
+    .alert-title-warning { color: #9a6700 !important; }
+    .alert-icon-warning { fill: #9a6700 !important; }
+
+    /* Caution */
+    blockquote.markdown-alert-caution { 
+        border-color: #cf222e !important; 
+        background-color: #ffebe9 !important; 
+        color: #24292f; 
+    }
+    .alert-title-caution { color: #cf222e !important; }
+    .alert-icon-caution { fill: #cf222e !important; }
+    `
+
     const additionCSS = `
     /* 修复表格边框合并问题 */
     .container table {
@@ -154,11 +225,13 @@ export async function renderMarkdownToResult(mdFilePath: string, config: RenderC
         margin: 10px 0;
         padding: 0;
     }
+    ${alertCSS}
   `
 
     return {
         html: bodyHtml,
         css: scopedCSS,
         addition: additionCSS,
+        rawMarkdown: rawMdContent,
     }
 }
