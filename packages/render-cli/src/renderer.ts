@@ -224,6 +224,14 @@ export async function renderMarkdownToResult(mdFilePath: string, config: RenderC
     .container pre {
         margin: 10px 0;
         padding: 0;
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        white-space: pre !important;
+        word-wrap: normal !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .container pre code {
+        white-space: pre !important; 
     }
     ${alertCSS}
   `

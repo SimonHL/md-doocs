@@ -5,10 +5,12 @@
 ## ✨ 特性
 
 - **独立运行**：无需启动 Web 服务，直接在终端将 `.md` 转换为 `.html`。
-- **自定义样式**：支持通过 `md-config.yaml` 配置主题色、字体及自定义 CSS。
-- **深色代码块**：集成 `highlight.js`，完美支持 GitHub Dark 等深色代码风格。
-- **表格自动转图**：自动使用 Playwright 对表格进行截图，并上传至微信公众号素材库，解决公众号表格样式适配难题。
-- **文件管理**：图片资源自动归档到 Markdown 同级 `images/` 目录。
+- **高保真样式内联**：集成 `juice` 引擎，自动将所有 CSS 样式内联，确保粘贴到微信后台后，语法高亮和主题布局完美重现。
+- **横向代码滚动**：完美解决微信端代码块横行滚动难题，支持 Mac 风格窗口样式。
+- **全自动化媒体处理**：
+    - **表格转图片**：自动截图并上传，解决公众号表格适配难题。
+    - **本地图片上传**：检测并自动上传 Markdown 中的本地图片至微信素材库。
+    - **在线 Markdown 生成**：同步生成一份图片链接已替换为微信 CDN 的 `-online.md` 文件。
 
 ## 📦 安装
 
@@ -26,15 +28,24 @@ pnpm exec playwright install chromium
 
 ### 基础命令
 
+您可以直接通过 TypeScript 运行（推荐在开发调试时使用）：
+
 ```bash
-# 使用 tsx 直接运行
-pnpm exec tsx packages/render-cli/src/index.ts <markdown文件路径>
+# 在 packages/render-cli 目录下
+pnpm exec tsx src/index.ts <Markdown文件路径>
 ```
 
-示例：
+最推荐的方式是作为正式工具运行：
 
 ```bash
-pnpm exec tsx packages/render-cli/src/index.ts "/Users/docs/article.md"
+# 使用 bin 目录下的入口
+./bin/cli.js <Markdown文件路径>
+```
+
+或者使用项目中定义的快捷命令：
+
+```bash
+pnpm start -- <Markdown文件路径>
 ```
 
 ### 命令行参数
@@ -50,7 +61,7 @@ pnpm exec tsx packages/render-cli/src/index.ts "/Users/docs/article.md"
 
 ```bash
 # 指定输出文件路径，并跳过表格转图片
-pnpm exec tsx packages/render-cli/src/index.ts "article.md" -o "final.html" --no-table-image
+pnpm start -- "article.md" -o "final.html" --no-table-image
 ```
 
 ## ⚙️ 配置文件
@@ -87,15 +98,13 @@ customCSS: |
   /* 如果您喜欢手绘风格，可以在这里粘贴 Sketch 风格的 CSS */
 ```
 
-## 📊 表格转图片流程
+当程序运行时，会自动执行以下操作：
 
-当启用表格转图片功能（默认开启）时：
-
-1. CLI 会识别 Markdown 中的所有 `<table>`。
-2. 使用 Playwright 在无头浏览器中渲染表格，并依据当前主题样式进行截图。
-3. 截图保存在 Markdown 同级目录的 `images/` 子文件夹中。
-4. 调用微信公众号接口上传截图。
-5. 在最终 HTML 中将表格替换为微信图片链接。
+1. **识别与转换**：识别 Markdown 中的本地图片和 `<table>`。
+2. **自动化渲染**：使用 Playwright 在无头浏览器中渲染表格并截图。
+3. **极速上传**：自动调用微信接口上传本地图片和表格截图至微信素材库。
+4. **生成在线版**：生成一份 `<filename>-online.md`，其中的图片链接已全部替换为微信 CDN 链接，方便在其他平台使用。
+5. **样式内联**：基于 `juice` 进行样式内联，生成最终的 `.rendered.html`。
 
 > **注意**：截图时会自动应用 `.container` 样式作用域，确保图片中的表格样式与最终网页预览一致。
 

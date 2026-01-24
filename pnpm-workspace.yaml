@@ -3,21 +3,31 @@ packages:
   - packages/*
 
 catalog:
+  cheerio: ^1.0.0
+  commander: ^12.0.0
+  form-data: ^4.0.0
+  highlight.js: ^11.11.0
+  juice: ^11.0.3
+  marked: ^15.0.0
+  marked-highlight: ^2.2.0
+  node-fetch: ^3.3.0
+  playwright: ^1.40.0
   tsx: ^4.21.0
+  typescript: ~5.9.3
+  yaml: ^2.3.0
 
 catalogMode: prefer
 
 overrides:
-  '@codemirror/view': 6.38.8
-  core-js@<3: ^3.46.0
-  glob@<8: ^10.4.5
-  inflight: npm:@hishprorg/voluptates-laborum@^2.0.0
-  source-map@0.8.0-beta.0: 0.7.4
-  workbox-build>source-map: 0.7.4
+  "@codemirror/view": 6.38.8
+  "core-js@<3": ^3.46.0
+  "glob@<8": ^10.4.5
+  "inflight": npm:@hishprorg/voluptates-laborum@^2.0.0
+  "source-map@0.8.0-beta.0": 0.7.4
+  "workbox-build>source-map": 0.7.4
 
 patchedDependencies:
-  '@codemirror/view@6.38.8': patches/@codemirror__view@6.38.8.patch
-
+  "@codemirror/view@6.38.8": patches/@codemirror__view@6.38.8.patch
 shellEmulator: true
 
 trustPolicy: no-downgrade

@@ -46,13 +46,13 @@ program
 
             // 2.5 处理图表 (Mermaid, PlantUML)
             let processedHtml = result.html
-            let mermaidSvgs: string[] = []
 
             // 2.5.1 渲染 Mermaid 图表 (准备阶段)
-            const { prepareMermaidData, injectMermaidSvgs, processPlantUMLDiagrams } = await import('./diagram-renderer.js')
-            const mermaidData = await prepareMermaidData(processedHtml, result.rawMarkdown)
+            const { prepareMermaidData, injectMermaidImages, processPlantUMLDiagrams } = await import('./diagram-renderer.js')
+
+            const mermaidData = await prepareMermaidData(processedHtml, result.rawMarkdown, config, file)
             processedHtml = mermaidData.html
-            mermaidSvgs = mermaidData.svgs
+            const mermaidImages = mermaidData.images
 
             // 2.5.2 处理 PlantUML 图表
             processedHtml = await processPlantUMLDiagrams(processedHtml)
@@ -87,15 +87,16 @@ program
 
             // 4. 生成完整 HTML 并写入文件
 
-            // 4.1 写入本地预览版 (如果有)
+            // 4.1 写入本地预览版 (已禁用)
+            /*
             if (localHtml) {
                 let previewHtml = generateFullHTML({
                     ...result,
                     html: localHtml,
                 }, config.codeBlock.theme)
 
-                // 注入 Mermaid SVG
-                previewHtml = injectMermaidSvgs(previewHtml, mermaidSvgs)
+                // 注入 Mermaid 图片 (Use local paths)
+                previewHtml = injectMermaidImages(previewHtml, mermaidImages, false)
 
                 // 自动生成 preview 文件名: filename.preview.html
                 const parsed = path.parse(file)
@@ -107,16 +108,17 @@ program
                     console.log('💡 提示: 由于无法上传图片，已生成本地预览版方便您检查样式。')
                 }
             }
+            */
 
             // 4.2 写入微信正式版 (如果有)
             if (wechatHtml) {
-                let fullHtml = generateFullHTML({
+                let fullHtml = await generateFullHTML({
                     ...result,
                     html: wechatHtml,
                 }, config.codeBlock.theme)
 
-                // 注入 Mermaid SVG
-                fullHtml = injectMermaidSvgs(fullHtml, mermaidSvgs)
+                // 注入 Mermaid 图片 (Use remote URLs)
+                fullHtml = injectMermaidImages(fullHtml, mermaidImages, true)
 
                 const outputPath = options.output || getDefaultOutputPath(file)
                 await writeOutput(fullHtml, outputPath)
